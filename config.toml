@@ -1,0 +1,5 @@
+baseURL = 'http://WAWLixiong.github.io/'
+languageCode = 'zh-cn'
+title = 'WAWLixiong Daily Report'
+BookSection = "docs"
+theme = "hugo-book"
