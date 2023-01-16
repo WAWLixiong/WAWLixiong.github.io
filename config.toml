@@ -31,19 +31,16 @@ enableGitInfo = true
   weight = 2
 
 [menu]
-[[menu.before]]
-  name = "Github11"
-  url = "https://github.com/alex-shpak/hugo-book"
-  weight = 10
-[[menu.after]]
-  name = "Github"
-  url = "https://github.com/alex-shpak/hugo-book"
-  weight = 10
+# [[menu.before]]
+# [[menu.after]]
+#   name = "Github"
+#   url = "https://github.com/alex-shpak/hugo-book"
+#   weight = 10
 
-[[menu.after]]
-  name = "Hugo Themes"
-  url = "https://themes.gohugo.io/hugo-book/"
-  weight = 20
+# [[menu.after]]
+#   name = "Hugo Themes"
+#   url = "https://themes.gohugo.io/hugo-book/"
+#   weight = 20
 
 [params]
   # (Optional, default light) Sets color theme: light, dark or auto.
@@ -121,3 +118,5 @@ enableGitInfo = true
   issueTerm = "pathname"
   theme = "github-light"
 
+[outputs]
+  home = ["HTML", "RSS", "JSON"]

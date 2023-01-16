@@ -1,3 +1,6 @@
+---
+draft: true
+---
 # Hints
 
 Hint shortcode can be used as hint/alerts/notification block.  
