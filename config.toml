@@ -3,11 +3,17 @@
 baseURL = 'https://www.wawlixiong.fun/'
 title = '记录日常'
 theme = 'hugo-book'
-disqusShortname = "wawlixiong-fun"
 
 # Book configuration
 disablePathToLower = true
 enableGitInfo = true
+
+[params.utteranc]
+  enable = true
+  repo = "WAWLixiong/hugoblogtalks"
+  issueTerm = "pathname"
+  theme = "github-light"
+
 
 # Needed for mermaid/katex shortcodes
 [markup]
