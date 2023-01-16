@@ -8,13 +8,6 @@ theme = 'hugo-book'
 disablePathToLower = true
 enableGitInfo = true
 
-[params.utteranc]
-  enable = true
-  repo = "WAWLixiong/hugoblogtalks"
-  issueTerm = "pathname"
-  theme = "github-light"
-
-
 # Needed for mermaid/katex shortcodes
 [markup]
 [markup.goldmark.renderer]
