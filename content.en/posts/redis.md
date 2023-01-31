@@ -5,8 +5,13 @@ date: 2023-01-24
 tags:
   - 202301
   - redis
+  - 缓存与数据库一致性
+  - 穿透
+  - 雪崩
+  - 击穿
 categories:
   - 2023
+  - redis
 menu: main
 ---
 
@@ -41,7 +46,7 @@ menu: main
    ![redis_login_3](/imgs/redis_login_3.png)
 2. 商户查询缓存
    - 企业缓存使用技巧, 缓存雪崩，穿透等问题
-   - 主动更新缓存
+   - 缓存更新
      - Cache Aside Pattern 缓存调用者在更新数据库时更新缓存, 可控性强，**企业采用**
        - 更新还是删除缓存?
          - 更新: 写多读少的场景很多无效更新
@@ -55,6 +60,19 @@ menu: main
          ![redis_cache](/imgs/redis_cache.png)
      - Read/Write Through Pattern 整合为一个服务，由服务保证一致性，调用方不用关心
      - Write Behind Caching Pattern 调用者只操作缓存，异步服务将缓存数据持久化到数据库, 风险太高
+   - 缓存穿透
+     - 缓存空对象
+     - 布隆过滤器: 不存在是绝对的，存在可能误判
+   ![cache_penetrate](/imgs/cache_penetrate.png)
+   ![cache_penetrate_solution](/imgs/cache_penetrate_solution.png)
+   - 缓存雪崩
+     - 多级缓存：浏览器缓存, nginx加缓存, redis, jvm本地缓存
+   ![cache_collapse](/imgs/cache_collapse.png)
+   - 缓存击穿(热点key过期重建耗时问题)
+   ![cache_breakdown](/imgs/cache_breakdown.png)
+   ![cache_breakdown_solution](/imgs/cache_breakdown_solution.png)
+   ![cache_breakdown_solution_with_mutex](/imgs/cache_breakdown_solution_with_mutex.png)
+   ![cache_breakdown_solution_with_logical_expire](/imgs/cache_breakdown_solution_with_logical_expire.png)
 3. 达人探店
    - list, sortset实现排行榜差异
 4. 优惠券秒杀
