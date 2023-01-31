@@ -46,17 +46,19 @@ menu: main
    ![redis_login_3](/imgs/redis_login_3.png)
 2. 商户查询缓存
    - 企业缓存使用技巧, 缓存雪崩，穿透等问题
+   - 参考: <https://zhuanlan.zhihu.com/p/408515044>
+   - 数据库+缓存的三个核心问题: 缓存利用率, 并发一致性, 缓存和数据库同时成功三个问题
    - 缓存更新
      - Cache Aside Pattern 缓存调用者在更新数据库时更新缓存, 可控性强，**企业采用**
        - 更新还是删除缓存?
-         - 更新: 写多读少的场景很多无效更新
+         - 更新: 写多读少的场景很多无效更新, 并发时需要加分布式锁同步数据造成性能降低
          - 删除: 更新数据库时使缓存失效, 查询时再更新缓存, **企业采用**
-       - 缓存与数据库操作同时成功或失败
-         - 单体系统: 缓存与数据库操作放在一个事务
-         - 分布式系统(通过mq通知其他系统删除缓存): 利用TCC等分布式方案
        - 先操作缓存还是数据库
          - 先删缓存后写数据库
-         - 先写数据库后缓存, **企业使用**
+         - 先写数据库后删除缓存, 主从同步延迟下需要延迟双删(及等待主从同步时间预计5s后再删除一次缓存) **企业使用**
+           - 问题1：延迟时间要大于「主从复制」的延迟时间
+           - 问题2：延迟时间要大于线程 B 读取数据库 + 写入缓存的时间
+           - 第二步失败的方案: 通过消息队列异步重试删除或者类似阿里的解决方案从binlog收集更新信息，不需要在业务代码中发送消息队列
          ![redis_cache](/imgs/redis_cache.png)
      - Read/Write Through Pattern 整合为一个服务，由服务保证一致性，调用方不用关心
      - Write Behind Caching Pattern 调用者只操作缓存，异步服务将缓存数据持久化到数据库, 风险太高
@@ -73,15 +75,15 @@ menu: main
    ![cache_breakdown_solution](/imgs/cache_breakdown_solution.png)
    ![cache_breakdown_solution_with_mutex](/imgs/cache_breakdown_solution_with_mutex.png)
    ![cache_breakdown_solution_with_logical_expire](/imgs/cache_breakdown_solution_with_logical_expire.png)
-3. 达人探店
+1. 达人探店
    - list, sortset实现排行榜差异
-4. 优惠券秒杀
+2. 优惠券秒杀
    - redis计数器, Lua脚本, 分布式锁，三种消息队列
-5. 好友关注
+3. 好友关注
    - set处理关注，取关，共同好友，消息推送功能
-6. 附近商户
+4. 附近商户
    - GeoHash
-7. 用户签到
+5. 用户签到
    - BitMap的统计功能
-8. UV统计
+6. UV统计
    - HyperLogLog的统计功能
