@@ -46,7 +46,9 @@ menu: main
    ![redis_login_3](/imgs/redis_login_3.png)
 2. 商户查询缓存
    - 企业缓存使用技巧, 缓存雪崩，穿透等问题
-   - 参考: <https://zhuanlan.zhihu.com/p/408515044>
+   - 参考
+     - <https://zhuanlan.zhihu.com/p/408515044>
+     - <https://zhuanlan.zhihu.com/p/194347153>
    - 数据库+缓存的三个核心问题: 缓存利用率, 并发一致性, 缓存和数据库同时成功三个问题
    - 缓存更新
      - Cache Aside Pattern 缓存调用者在更新数据库时更新缓存, 可控性强，**企业采用**
@@ -75,15 +77,22 @@ menu: main
    ![cache_breakdown_solution](/imgs/cache_breakdown_solution.png)
    ![cache_breakdown_solution_with_mutex](/imgs/cache_breakdown_solution_with_mutex.png)
    ![cache_breakdown_solution_with_logical_expire](/imgs/cache_breakdown_solution_with_logical_expire.png)
-1. 达人探店
+3. 达人探店
    - list, sortset实现排行榜差异
-2. 优惠券秒杀
+4. 优惠券秒杀
    - redis计数器, Lua脚本, 分布式锁，三种消息队列
-3. 好友关注
+   - 全局唯一ID
+   - 优惠券秒杀下单
+   - 超卖问题
+   - 一人一单
+   - 分布式锁
+   - redis优化秒杀
+   - redis消息队列实现异步秒杀
+5. 好友关注
    - set处理关注，取关，共同好友，消息推送功能
-4. 附近商户
+6. 附近商户
    - GeoHash
-5. 用户签到
+7. 用户签到
    - BitMap的统计功能
-6. UV统计
+8. UV统计
    - HyperLogLog的统计功能
