@@ -86,8 +86,17 @@ menu: main
      - 技巧：key上设计日期避免单个key超过2^32：```inc:prefix:20230210```
    - 优惠券秒杀下单
    - 超卖问题
+   ![optimistic_lock_with_version](/imgs/optimistic_lock_with_version.png)
+   ![optimistic_lock_with_version](/imgs/optimistic_lock_with_version.png)
    - 一人一单
+     - 判断是否有订单记录
+     - 分布式锁控制单个用户
    - 分布式锁
+     - 简单实现: 通过set(key, val, nx, timeout), ```key: lock:<业务>:<userId>, value: <threadId> timeout: 30s```
+     - 简版问题:
+       - 1. 业务执行时间太长超过了ttl, 锁被提前释放, 引入并发问题
+         - 再执行释放锁时，释放其他线程的锁, 解锁错误; 解决方案: 使用uuid作为value(不能是线程id, 会重复), 解锁时判断是否一致
+       - 2. 判断是自己的锁与释放锁不是原子操作, 可能在判断之后锁超时，释放阶段解锁错误
    - redis优化秒杀
    - redis消息队列实现异步秒杀
 5. 好友关注
