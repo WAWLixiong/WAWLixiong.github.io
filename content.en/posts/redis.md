@@ -91,7 +91,7 @@ menu: main
    - 一人一单
      - 判断是否有订单记录
      - 分布式锁控制单个用户
-   - 分布式锁
+   - 分布式锁解决一人一单
      - 简单实现: 通过set(key, val, nx, timeout), ```key: lock:<业务>:<userId>, value: <threadId> timeout: 30s```
        - ttl 兜底
      - 简版实现的问题:
@@ -100,7 +100,45 @@ menu: main
        - 超时续约: 利用watchDog, 每隔一段时间(innerLeaseTime/3), 重置超时时间
        - 主从同步异常: 利用联锁MultiLock, 多个节点没有关系, 通过最大失败数量控制获取锁成功
    - redis优化秒杀
+     - 商品信息存入redis，redis通过lua脚本原子的完成是否可以下单，减库存，记录用户信息, 异步的完成订单创建
+     - redis队列
+       - list模拟: y:支持持久化. d:无法避免消息丢失; 只支持消费一次
+       - pub/sub: y:支持多生产者多消费者. d: 不支持持久化; 无法避免消息丢失; 堆积后超时数据丢失;
+       - stream: y:消息可回溯; 多消费; 阻塞. d: 有漏读风险
    - redis消息队列实现异步秒杀
+   ![redis_mq](/imgs/redis_mq.png)
+     - xreadgroup, **>** 获取没有delivered的消息, **0**和其他有效或不完整的IDS获取pedning的消息
+     - xpending统计信息
+
+      ```redis
+        > XREADGROUP GROUP group55 consumer-123 COUNT 1 STREAMS mystream >
+        1) 1) "mystream"
+          1) 1) 1) 1526984818136-0  # 消息Id
+                1) 1) "duration"    # 消费的数据
+                    1) "1532"
+                    2) "event-id"
+                    3) "5"
+                    4) "user-id"
+                    5) "7782813"
+
+        // 查看消费者组
+        127.0.0.1:6379> XPENDING my_stream  my_group
+        2) (integer) 2       # 消费组中，所有消费者的pending消息数量
+        3) "1605524657157-0" # pending消息中的，最小消息ID
+        4) "1605524665215-0" # pending消息中的，最大消息ID
+        5) 1) 1) "my_consumer1"  # 消费者1
+              1) "1"             # 有1条待确认消息
+          1) 1) "my_consumer2"  # 消费者2
+              1) "2"             # 有2条待确认消息
+
+        // 查看单个消费者
+        127.0.0.1:6379> XPENDING my_stream  my_group 0 + 10 my_consumer1  # 查询(0, 到最大)，10条消息
+        6) 1) "1605524665215-0"  # 待ACK消息ID
+          1) "my_consumer1"     # 所属消费者
+          2) (integer) 847437   # 消息自从被消费者获取后到现在过去的时间(毫秒) - idle time
+          3) (integer) 1        # 消息被获取的次数  - delivery counter
+      ```
+
 5. 好友关注
    - set处理关注，取关，共同好友，消息推送功能
 6. 附近商户
