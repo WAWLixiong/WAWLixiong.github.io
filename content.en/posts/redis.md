@@ -141,6 +141,11 @@ menu: main
 
 5. 好友关注
    - set处理关注，取关，共同好友，消息推送功能
+   - 消息推送
+    [!push](/imgs/push.png)
+    [!pull](/imgs/pull.png)
+    [!push_and_pull](/imgs/push_and_pull.png)
+   - 滚动刷新，采用zset数据结构, zrevrangewithscore max min limit offset count
 6. 附近商户
    - GeoHash
 7. 用户签到
