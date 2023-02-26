@@ -1,5 +1,5 @@
 ---
-title: redis
+title: redis实战
 description: ""
 date: 2023-01-24
 tags:
@@ -147,8 +147,14 @@ menu: main
     [!push_and_pull](/imgs/push_and_pull.png)
    - 滚动刷新，采用zset数据结构, zrevrangewithscore max min limit offset count
 6. 附近商户
-   - GeoHash
+   - GeoHash(底层是zset)
+   - 命令 geoadd, geodist, geohash(返回数据的索引), geosearch, geosearchstore
 7. 用户签到
    - BitMap的统计功能
+   - setbit设置签到; bitfield查询连续签到天数 `BITFIELD key GET encoding offset`
 8. UV统计
-   - HyperLogLog的统计功能
+   - HyperLogLog的统计功能, 有0.81%的误差
+   - HLL 内存占用永久小于16kb
+   - UV: Unique Vistor; 一天内访问只记录一次
+   - PV: Page View; 页面访问量, 衡量流量
+   - pfadd, pfcount
