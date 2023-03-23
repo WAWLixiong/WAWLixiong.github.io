@@ -71,3 +71,7 @@ Precedence problem | Expression | What People Expect | What They Actually Get
 ## 内存布局
 
 1. `int i, a[10]` 在内存由高位向地位分配时, i在高位, a[0]在最低位, 内存连续分配的, a[10]与i的地址相同, 具体内存分配由编译器实现不同而不同
+
+## 为什么 &sizeof 不合法
+
+1. 因为 & 和 sizeof 都是运算符
