@@ -248,9 +248,16 @@ int main(){
 
 ## tcp设计
 
+{{< columns >}}
+
 <img src=/imgs/tcp_head.png width=80%>
 
+
+<--->
+
 <img src=/imgs/three_handshake.png width=80%>
+
+{{< /columns >}}
 
 1. 第一次握手：
    1. 客户端将SYN标志位置为1
@@ -271,12 +278,17 @@ int main(){
 
 第三次握手可以携带数据
 
+{{< columns >}}
 滑动窗口
 
-<img src=/imgs/slide_window.png width=50%/>
+<img src=/imgs/slide_window.png width=100%/>
+
+<--->
 
 四次挥手
-<img src=/imgs/four_shakehand.png width=50%>
+<img src=/imgs/four_shakehand.png width=100%>
+
+{{< /columns >}}
 
 ## 多进程多线程服务器
 

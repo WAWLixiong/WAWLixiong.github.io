@@ -25,10 +25,6 @@ enableGitInfo = true
   languageName = 'English'
   contentDir = 'content.en'
   weight = 1
-[languages.zh]
-  languageName = 'Chinese'
-  contentDir = 'content.zh'
-  weight = 2
 
 [menu]
 # [[menu.before]]
@@ -120,3 +116,17 @@ enableGitInfo = true
 
 [outputs]
   home = ["HTML", "RSS", "JSON"]
+
+[module]
+  [[module.mounts]]
+    source = "content.en/books"
+    target = "content/posts"
+  [[module.mounts]]
+    source = "content.en/posts"
+    target = "content/posts"
+  [[module.mounts]]
+    source = "content.en/docs"
+    target = "content/docs"
+  [[module.mounts]]
+    source = "content.en/menu"
+    target = "content/menu"
