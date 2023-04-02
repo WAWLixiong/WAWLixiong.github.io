@@ -120,7 +120,7 @@ assert_eq!(result2, Ok(5));
 
 ## 实现不同trait的效果
 
-1. `impl From<&ImageSpec> for String` String::from()
+1. `impl From<&ImageSpec> for String` String::from(), &str.into()
 2. `impl TryFrom<&str> for ImageSpec` ImageSpec::try_from(), (&str).parse().unwrap()
 3. `impl FromStr for KvPair` KvPair::from_str, (&str).parse().unwrap()
 
@@ -138,3 +138,55 @@ Rust中的Arc是“原子引用计数（Atomically Reference Counted）”类型
 6. 垃圾回收：由于Arc会自动清除其内存，因此不需要手动执行内存管理。
 
 总之，Arc允许多个变量共享相同的数据，并提供线程安全和自动内存管理的功能
+
+## 强制类型转换
+
+### 强制转换
+
+```rust
+trait Trait {}
+
+fn foo<X: Trait>(t: X) {}
+
+impl<'a> Trait for &'a i32 {}
+
+fn main() {
+    let t: &mut i32 = &mut 0;
+    foo(t);
+}
+```
+
+```rust
+error[E0277]: the trait bound `&mut i32: Trait` is not satisfied
+ --> src/main.rs:9:9
+  |
+3 | fn foo<X: Trait>(t: X) {}
+  |           ----- required by this bound in `foo`
+...
+9 |     foo(t);
+  |         ^ the trait `Trait` is not implemented for `&mut i32`
+  |
+  = help: the following implementations were found:
+            <&'a i32 as Trait>
+  = note: `Trait` is implemented for `&i32`, but not for `&mut i32`
+```
+
+### 点运算的执行逻辑
+
+1. value具有T类型, value.func() -> T::func(value),  
+2. auto-reference, auto-mut-reference
+3. Deref, DerefMut
+4. ?Size
+
+## 集合容器
+
+1. 切片是视图，迭代器是数据访问操作
+2. Vec 有额外的 capacity，可以增长；而 Box<[T]> 一旦生成就固定下来，没有 capacity，也无法增长; Box<[T]> 对数据具有所有权, 只能在堆上, &[T]没有所有权，可以在栈上或堆上; 注意 Box<[T]> 和 Box<[T; n]> 并不相同
+
+## trubofish
+
+```rust
+// 它也可以用来在函数和方法中绑定泛型参数
+let v = Vec::<bool>::new();
+println!("{:?}", v);
+```
