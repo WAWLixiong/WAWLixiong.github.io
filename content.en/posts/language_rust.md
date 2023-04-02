@@ -190,3 +190,157 @@ error[E0277]: the trait bound `&mut i32: Trait` is not satisfied
 let v = Vec::<bool>::new();
 println!("{:?}", v);
 ```
+
+## Eq, PartialEq
+
+![eq_partial_eq](/imgs/eq_partial_eq.png)
+
+## 结构体是值类型
+
+```rust
+use std::thread;
+
+#[derive(Debug)]
+struct Foo {
+    data: i32,
+}
+
+fn main() {
+    let foo = Foo { data: 42 };
+    let handle = thread::spawn(move || {
+        println!("Data from another thread: {}", foo.data);
+    });
+    handle.join().unwrap();
+    println!("{:?}", foo); // 这里仍然可以使用
+}
+```
+
+## 闭包
+
+![closure](/imgs/closure.png)
+
+The compiler prefers to capture a closed-over variable by immutable borrow, followed by unique immutable borrow (see below), by mutable borrow, and finally by move. It will pick the first choice of these that is compatible with how the captured variable is used inside the closure body.
+
+unique immutable: The compiler prefers to capture a closed-over variable by immutable borrow, followed by unique immutable borrow (see below), by mutable borrow, and finally by move. It will pick the first choice of these that is compatible with how the captured variable is used inside the closure body
+<https://doc.rust-lang.org/reference/types/closure.html#unique-immutable-borrows-in-captures>
+
+```rust
+let mut b = false;
+let x = &mut b;
+{
+    let mut c = || { *x = true; };
+    // The following line is an error:
+    // let y = &x;
+    c();
+}
+let z = &x;
+```
+
+If the move keyword is used, then all captures are by move or, for Copy types, by copy, regardless of whether a borrow would work
+
+```rust
+fn t1(){
+    let mut name = String::from("hello");
+
+    // 1.不可变引用，&name被存储在闭包c1里
+    let c1 = || &name;
+    // 可使用所有者变量name，且可多次调用闭包
+    println!("{}, {:?}, {:?}", name, c1(), c1());
+
+    // 2.可变引用，&mut name被存储在闭包c2里，调用c2的时候要修改这个字段，
+    // 因此c2也要设置为mut c2
+    let mut c2 = || {
+        name.push_str(" world ");
+    };
+    // 可多次调用c2闭包
+    // 但不能调用c2之前再使用name或引用name，因为&mut name已经存入c2里了
+    // println!("{}", name);  // 取消注释将报错
+    // println!("{}", &name); // 取消注释将报错
+    c2();
+    c2();
+
+    // // 3.Move/Copy，将name移入到闭包c3中
+    // let c3 = || {
+    //     let x = name;
+    //     // let y = name;  // 取消注释见报错，use of moved value
+    // };
+    // // println!("{}", name);  //取消注释将报错
+}
+```
+
+## Deref
+
+1. *解引用
+2. 函数参数
+
+Deref coercion is a convenience Rust performs on arguments to functions and methods, and works only on types that implement the Deref trait. It happens automatically when we pass a reference to a particular type’s value as an argument to a function or method that doesn’t match the parameter type in the function or method definition
+<https://doc.rust-lang.org/book/ch15-02-deref.html#implicit-deref-coercions-with-functions-and-methods>
+
+```rust
+fn fun(a: impl Asref<str>){
+  todo!()
+}
+fun(&str)
+```
+
+1. From &T to &U when T: Deref<Target=U>
+2. From &mut T to &mut U when T: DerefMut<Target=U>
+3. From &mut T to &U when T: Deref<Target=U>
+4. todo: 不可能从 `不可变`转为`可变`
+
+## Trait Object
+
+![trait_object](/imgs/trait_object.png)
+
+指向同一个数据的 trait object 其 ptr 地址相同
+指向同一种类型的同一个 trait 的 vtable 地址相同
+
+```rust
+use std::fmt::{Debug, Display};
+use std::mem::transmute;
+
+fn main() {
+    let s1 = String::from("hello world!");
+    let s2 = String::from("goodbye world!");
+    // Display / Debug trait object for s
+    let w1: &dyn Display = &s1;
+    let w2: &dyn Debug = &s1;
+
+    // Display / Debug trait object for s1
+    let w3: &dyn Display = &s2;
+    let w4: &dyn Debug = &s2;
+
+    // 强行把 triat object 转换成两个地址 (usize, usize)
+    // 这是不安全的，所以是 unsafe
+    let (addr1, vtable1): (usize, usize) = unsafe { transmute(w1) };
+    let (addr2, vtable2): (usize, usize) = unsafe { transmute(w2) };
+    let (addr3, vtable3): (usize, usize) = unsafe { transmute(w3) };
+    let (addr4, vtable4): (usize, usize) = unsafe { transmute(w4) };
+
+    // s 和 s1 在栈上的地址，以及 main 在 TEXT 段的地址
+    println!(
+        "s1: {:p}, s2: {:p}, main(): {:p}",
+        &s1, &s2, main as *const ()
+    );
+    // trait object(s / Display) 的 ptr 地址和 vtable 地址
+    println!("addr1: 0x{:x}, vtable1: 0x{:x}", addr1, vtable1);
+    // trait object(s / Debug) 的 ptr 地址和 vtable 地址
+    println!("addr2: 0x{:x}, vtable2: 0x{:x}", addr2, vtable2);
+
+    // trait object(s1 / Display) 的 ptr 地址和 vtable 地址
+    println!("addr3: 0x{:x}, vtable3: 0x{:x}", addr3, vtable3);
+
+    // trait object(s1 / Display) 的 ptr 地址和 vtable 地址
+    println!("addr4: 0x{:x}, vtable4: 0x{:x}", addr4, vtable4);
+
+    // 指向同一个数据的 trait object 其 ptr 地址相同
+    assert_eq!(addr1, addr2);
+    assert_eq!(addr3, addr4);
+
+    // 指向同一种类型的同一个 trait 的 vtable 地址相同
+    // 这里都是 String + Display
+    assert_eq!(vtable1, vtable3);
+    // 这里都是 String + Debug
+    assert_eq!(vtable2, vtable4);
+}
+```

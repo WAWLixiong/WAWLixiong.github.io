@@ -1,11 +1,12 @@
 ---
-title: 12 Optimizations
+title: golang 12 Optimizations
 description: ""
 date: 2023-03-25
 tags:
-  - optimization
+  - go
 categories:
   - 2023
+  - go
 ---
 
 ## not understanding stack vs heap
