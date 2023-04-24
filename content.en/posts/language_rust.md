@@ -118,12 +118,6 @@ let result2 = divide(10, 2).ok_or_else(|| "Failed to divide by zero!");
 assert_eq!(result2, Ok(5));
 ```
 
-## 实现不同trait的效果
-
-1. `impl From<&ImageSpec> for String` String::from(), &str.into()
-2. `impl TryFrom<&str> for ImageSpec` ImageSpec::try_from(), (&str).parse().unwrap()
-3. `impl FromStr for KvPair` KvPair::from_str, (&str).parse().unwrap()
-
 ## Arc
 
 Rust中的Arc是“原子引用计数（Atomically Reference Counted）”类型的缩写，它允许多个变量共享相同的数据，同时提供线程安全性。当多个变量需要共享相同的数据时，可以使用Arc。
@@ -344,3 +338,162 @@ fn main() {
     assert_eq!(vtable2, vtable4);
 }
 ```
+
+## 生命周期
+
+lieftime variance
+<https://lifetime-variance.sunshowers.io/>
+<https://doc.rust-lang.org/nomicon/subtyping.html>
+<https://doc.rust-lang.org/reference/subtyping.html#variance>
+<https://github.com/fucking-translation/blog/tree/main/src/lang/rust>
+
+## tokio
+
+1. task非常轻量, 64bytes
+2. task必须是 'static bound 的(<https://github.com/pretzelhammer/rust-blog/blob/master/posts/common-rust-lifetime-misconceptions.md#2-if-t-static-then-t-must-be-valid-for-the-entire-program>)
+   1. T: 'static is some T that can be safely held indefinitely long, including up until the end of the program. T: 'static includes all &'static T however it also includes all owned types, like String, Vec, etc
+3. task必须实现Send，因为需要由scheduler在多个线程中执行
+4. ![tokio_conn](/imgs/tokio_conn.png)
+
+```rust
+use bytes::Bytes;
+use mini_redis::client;
+use tokio::sync::{mpsc, oneshot};
+
+type Responser<T> = oneshot::Sender<mini_redis::Result<T>>;
+
+#[derive(Debug)]
+enum Command {
+    Get {
+        key: String,
+        resp: Responser<Option<Bytes>>,
+    },
+
+    Set {
+        key: String,
+        val: Bytes,
+        resp: Responser<()>,
+    },
+}
+
+
+#[tokio::main]
+async fn main() {
+    let (tx, mut rx) = mpsc::channel(32);
+
+    let tx2 = tx.clone();
+
+    let manager = tokio::spawn(async move {
+        let mut client = client::connect("localhost:49153").await.unwrap();
+
+        while let Some(cmd) = rx.recv().await {
+            match cmd {
+                Command::Get { key, resp } => {
+                    let res = client.get(&key).await;
+                    // ignore error
+                    let _ = resp.send(res);
+                }
+                Command::Set { key, val, resp } => {
+                    let res = client.set(&key, val).await;
+                    // ignore error
+                    let _ = resp.send(res);
+                }
+            }
+        }
+    });
+
+    let t1 = tokio::spawn(async move {
+        let (resp_tx, resp_rx) = oneshot::channel();
+        let cmd = Command::Get { key: "k1".to_string(), resp: resp_tx };
+        if tx.send(cmd).await.is_err() {
+            eprintln!("connection task shutdown");
+            return;
+        }
+        let res = resp_rx.await;
+        println!("Got (Get) = {:?}", res);
+    });
+
+    let t2 = tokio::spawn(async move {
+        let (resp_tx, resp_rx) = oneshot::channel();
+        let cmd = Command::Set { key: "k2".to_string(), val: "hello".into(), resp: resp_tx };
+        if tx2.send(cmd).await.is_err() {
+            eprintln!("connection task shutdown");
+            return;
+        }
+        let res = resp_rx.await;
+        println!("Got (Set) = {:?}", res);
+    });
+
+    t1.await.unwrap();
+    t2.await.unwrap();
+    manager.await.unwrap();
+}
+```
+
+## 智能指针
+
+1. 智能指针一定是胖指针，胖指针不一定是智能指针, String是指针指针，&str是普通胖指针
+2. 智能指针都对数据有所有权，普通胖指针没有所有权
+3. 实现了 Deref，DerefMut，Drop的都是智能指针, e.g. Box\<T\>, Vec\<T\>, Rc\<T\>, Arc\<T\>, PathBuf, Cow<'a, B>, MutexGuard\<T\>, RwLockReadGuard 和 RwLockWriteGuard
+4. Box\<T\>目的：在堆上分配内存，类似与C/C++的malloc功能
+5. Box::new() 是一个函数，所以传入它的数据会出现在栈上，再移动到堆上。如果是一个非常大的结构，就有可能stack overflow, `cargo run —release` 会inline代码所以不会出现问题
+6. Cow<'a, B> 写时克隆, 包裹一个只读借用，但如果调用者需要所有权或者需要修改内容，那么它会 clone 借用的数据
+   [Cow](/imgs/Cow.png)
+   为何 Borrow 要定义成一个泛型 trait
+
+   ```rust
+   let s = "hello world!".to_owned();
+   // 这里必须声明类型，因为 String 有多个 Borrow 实现 
+   // 借用为 &String
+   let r1: &String = s.borrow();
+   // 借用为 &str
+   let r2: &str = s.borrow();
+   ```
+
+   ```rust
+    use serde::Deserialize;
+    use std::borrow::Cow;
+
+    #[derive(Debug, Deserialize)]
+    struct User<'input> {
+        #[serde(borrow)]
+        name: Cow<'input, str>,
+        age: u8,
+    }
+
+    fn main() {
+        let input = r#"{ "name": "Tyr", "age": 18 }"#;
+        let user: User = serde_json::from_str(input).unwrap();
+
+        match user.name {
+            Cow::Borrowed(x) => println!("borrowed {}", x),
+            Cow::Owned(x) => println!("owned {}", x),
+        }
+    }
+   ```
+
+## 容器类型 Vec\<T\>, [T;n], &[T], Box<[T]>
+
+1. 切片 只读&[T], 可写&mut[T]，分配在堆上Box<[T]>
+2. 切片和数据的关系
+    ![slice](/imgs/slice.png)
+3. &[T] 和 &Vec\<T\>的关系
+    ![slice_dif](/imgs/slice_dif.png)
+4. [1, 2, 3] 虽然没有实现 AsRef 但是内建了其实现，所以可以用在需要AsRef Bound的地方, 其解引用就是&[T]
+5. &str和普通的切片没有区别
+    ![str_slice](/imgs/str_slice.png)
+6. 字符数组和字符串的区别
+    1. &[char] 不能与 &str直接对比, String和&str可以直接对比
+    ![char_array](/imgs/char_array.png)
+7. &[T], &mut[T]不具备所有权，Box<[T]> 具备所有权
+    ![box_T](/imgs/box_T.png)
+8. Box<[T]>与Vec\<T\>相似, Box<[T]> 没有capacity, 目前只能通过Vec\<T\>::into_boxed_slice()转换
+9. Box<[T]> 有一个很好的特性是，不像 Box<[T;n]> 那样在编译时就要确定大小，它可以在运行期生成，以后大小不会再改变
+
+![slice_transfer](/imgs/slice_transfer.png)
+
+## 分发手段
+
+1. 泛型静态分发
+2. trait object动态分发
+3. enum 的不同状态分发
