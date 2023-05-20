@@ -342,10 +342,31 @@ fn main() {
 ## 生命周期
 
 lieftime variance
-<https://lifetime-variance.sunshowers.io/>
-<https://doc.rust-lang.org/nomicon/subtyping.html>
-<https://doc.rust-lang.org/reference/subtyping.html#variance>
-<https://github.com/fucking-translation/blog/tree/main/src/lang/rust>
+<https://lifetime-variance.sunshowers.io/></br>
+<https://doc.rust-lang.org/nomicon/subtyping.html></br>
+<https://doc.rust-lang.org/reference/subtyping.html#variance></br>
+<https://github.com/fucking-translation/blog/tree/main/src/lang/rust></br>
+<https://github.com/pretzelhammer/rust-blog/blob/master/posts/common-rust-lifetime-misconceptions.md#2-if-t-static-then-t-must-be-valid-for-the-entire-program></br>
+
+### 生命周期及相关误解
+
+1. **T** only contains owned types
+   - T包含 &T, &mut T
+   - &T 和 &mut T没有交集
+2. if **T: &'static** then **T** must be valid for the entire program
+3. **&'a T** and **T: 'a** are the same thing
+   - &'a T 暗示至少T: 'a, T: 'a包含所有的&'a T，但是反过来不对
+   - &'static Ref<'a, T>, compile error, T: 'a的，不可能再有'static的引用
+4. my code isn't generic and doesn't have lifetimes
+5. if it compiles then my lifetime annotations are correct
+6. boxed trait objects don't have lifetimes
+7. compiler error messages will tell me how to fix my program
+8. lifetime can grow and shrink at run-time
+   - 在编译时确定，采用最短的lifetime
+9. downgrading mut refs to shared refs is safe
+   - anti-pattern
+   - re-borrowed shared ref 不能于其他 shared ref 共存
+10. closures follow the same lifetime elision rules as functions
 
 ## tokio
 
